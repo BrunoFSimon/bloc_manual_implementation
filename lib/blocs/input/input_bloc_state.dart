@@ -3,8 +3,8 @@ sealed class InputBlocState {
 }
 
 class InitialInputBlocState extends InputBlocState {
-  double get weight => 0.0;
-  double get height => 0.0;
+  double? get weight => null;
+  double? get height => null;
 
   const InitialInputBlocState();
 }

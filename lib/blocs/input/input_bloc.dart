@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:bloc_manual_implementation/blocs/input/input_bloc_event.dart';
 import 'package:bloc_manual_implementation/blocs/input/input_bloc_state.dart';
 
@@ -39,7 +38,7 @@ class InputBloc {
     final value = double.tryParse(event.height);
 
     if (value == null) {
-      _heightError = 'Altura inserida é inválida';
+      _heightError = 'Inserted height is invalid';
     } else {
       _height = value;
     }
@@ -53,7 +52,9 @@ class InputBloc {
     final value = double.tryParse(event.weight);
 
     if (value == null) {
-      _weightError = 'Peso inserido é inválido';
+      /// TODO criar um arquivo com essas mensagens de erro para
+      /// facilitar comparações nos testes
+      _weightError = 'Inserted weight is invalid';
     } else {
       _weight = value;
     }

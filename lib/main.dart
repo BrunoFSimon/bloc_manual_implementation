@@ -1,7 +1,9 @@
 import 'package:bloc_manual_implementation/blocs/input/input_bloc.dart';
-import 'package:bloc_manual_implementation/providers/bloc_provider.dart';
-import 'package:bloc_manual_implementation/providers/multi_bloc_provider.dart';
+import 'package:bloc_manual_implementation/components/provider/bloc_provider.dart';
+import 'package:bloc_manual_implementation/components/provider/multi_bloc_provider.dart';
+import 'package:bloc_manual_implementation/pages/calculator/calculator_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,9 +35,20 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [(child) => BlocProvider(bloc: _inputBloc, child: child)],
-      child: MaterialApp(),
+    return GestureDetector(
+      onTap: FocusScope.of(context).unfocus,
+      child: MultiBlocProvider(
+        providers: [(child) => BlocProvider(bloc: _inputBloc, child: child)],
+        child: MaterialApp(
+          theme: ThemeData(
+            colorSchemeSeed: Colors.grey,
+            textTheme: GoogleFonts.gabaritoTextTheme(
+              Theme.of(context).textTheme,
+            ),
+          ),
+          home: CalculatorWidget(),
+        ),
+      ),
     );
   }
 }
