@@ -2,6 +2,7 @@ import 'package:bloc_manual_implementation/blocs/input/input_bloc.dart';
 import 'package:bloc_manual_implementation/components/provider/bloc_provider.dart';
 import 'package:bloc_manual_implementation/components/provider/multi_bloc_provider.dart';
 import 'package:bloc_manual_implementation/pages/calculator/calculator_widget.dart';
+import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,12 +19,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final InputBloc _inputBloc;
+  late final BMICalculatorService _bmiCalculatorService;
 
   @override
   void initState() {
     super.initState();
 
     _inputBloc = InputBloc();
+    _bmiCalculatorService = BMICalculatorService();
   }
 
   @override
@@ -38,7 +41,10 @@ class _MyAppState extends State<MyApp> {
     return GestureDetector(
       onTap: FocusScope.of(context).unfocus,
       child: MultiBlocProvider(
-        providers: [(child) => BlocProvider(bloc: _inputBloc, child: child)],
+        providers: [
+          (child) => BlocProvider(bloc: _inputBloc, child: child),
+          (child) => BlocProvider(bloc: _bmiCalculatorService, child: child),
+        ],
         child: MaterialApp(
           theme: ThemeData(
             colorSchemeSeed: Colors.grey,
