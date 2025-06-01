@@ -2,6 +2,14 @@
 
 Neste projeto, seguimos padrões específicos para a implementação de BLoCs para garantir consistência e clareza.
 
+### Nomenclatura de Arquivos do BLoC
+
+Para manter a organização, os arquivos relacionados a um BLoC específico seguem o padrão:
+*   **BLoC Principal:** `nome_do_bloc.dart` (ex: `input_bloc.dart`) - Contém a classe principal do BLoC.
+*   **Eventos:** `nome_do_bloc_event.dart` (ex: `input_bloc_event.dart`) - Define a `sealed class` base para eventos e suas classes concretas.
+*   **Estados:** `nome_do_bloc_state.dart` (ex: `input_bloc_state.dart`) - Define a `sealed class` base para estados e suas classes concretas.
+
+
 ### Eventos do BLoC (`BlocEvent`)
 
 Os eventos representam ações do usuário ou ocorrências do sistema que o BLoC precisa processar.
@@ -47,7 +55,7 @@ Os estados representam a condição ou os dados atuais do BLoC, que a UI (Interf
     *   Para o `InputBloc`, temos:
         *   `InitialInputBlocState`: Representa o estado inicial do BLoC, definindo valores padrão para `weight` e `height`.
         *   `SuccessInputBlocState`: Representa um estado de sucesso ou um estado onde os dados (`weight` e `height`) são válidos e estão prontos para serem usados.
-        *   `ErrorInputBlocState`: Representa um estado de erro, contendo informações sobre os erros ocorridos para `weight` e/ou `height`.
+        *   `ErrorInputBlocState`: Representa um estado de erro, contendo informações sobre os erros ocorridos para `weight` e/ou `height`, além dos valores atuais desses campos.
 
 3.  **Imutabilidade:**
     *   Todas as propriedades dentro das classes de estado são declaradas como `final`.
@@ -85,11 +93,18 @@ Os estados representam a condição ou os dados atuais do BLoC, que a UI (Interf
           // ...
         }
         ```
-    *   `ErrorInputBlocState`: Carrega mensagens de erro. Os campos de erro (`weightError`, `heightError`) são anuláveis (`String?`) pois um erro para um campo específico pode ou não estar presente.
+    *   `ErrorInputBlocState`: Carrega os valores atuais de `weight` e `height` (que podem ser os últimos válidos ou os que causaram o erro) e as mensagens de erro. Os campos de erro (`weightError`, `heightError`) são anuláveis (`String?`) pois um erro para um campo específico pode ou não estar presente.
         ```dart
         class ErrorInputBlocState extends InputBlocState {
+          final double weight;
+          final double height;
           final String? weightError; // Mensagem de erro para o peso, opcional
           final String? heightError; // Mensagem de erro para a altura, opcional
-          const ErrorInputBlocState({this.weightError, this.heightError});
+          const ErrorInputBlocState({
+            required this.height,
+            required this.weight,
+            required this.weightError, // Mesmo sendo String?, é required no construtor para passar null explicitamente se for o caso
+            required this.heightError, // Mesmo sendo String?, é required no construtor para passar null explicitamente se for o caso
+          });
         }
         ```

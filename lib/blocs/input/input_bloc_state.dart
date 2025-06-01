@@ -17,8 +17,15 @@ class SuccessInputBlocState extends InputBlocState {
 }
 
 class ErrorInputBlocState extends InputBlocState {
+  final double weight;
+  final double height;
   final String? weightError;
   final String? heightError;
 
-  const ErrorInputBlocState({this.weightError, this.heightError});
+  const ErrorInputBlocState({
+    required this.height,
+    required this.weight,
+    required this.weightError,
+    required this.heightError,
+  });
 }
