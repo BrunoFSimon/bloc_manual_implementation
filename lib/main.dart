@@ -18,6 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // TODO improve it to insert directly in the provider's list with auto dispose pattern
   late final InputBloc _inputBloc;
   late final BMICalculatorService _bmiCalculatorService;
 
