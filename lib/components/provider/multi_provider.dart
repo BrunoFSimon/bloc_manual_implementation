@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 
-typedef BlocProviderBuilder = Widget Function(Widget child);
+typedef ProviderBuilder = Widget Function(Widget child);
 
-class MultiBlocProvider extends StatelessWidget {
-  final List<BlocProviderBuilder> providers;
+class MultiProvider extends StatelessWidget {
+  final List<ProviderBuilder> providers;
 
   final Widget child;
 
-  const MultiBlocProvider({
+  const MultiProvider({
     super.key,
     required this.providers,
     required this.child,

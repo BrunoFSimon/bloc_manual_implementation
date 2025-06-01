@@ -13,4 +13,6 @@ class BMICalculatorService {
 
     return BMICalculatorResult(currentBMI: bmi, category: category);
   }
+
+  void dispose() {}
 }

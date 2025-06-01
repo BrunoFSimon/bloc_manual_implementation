@@ -1,7 +1,7 @@
 import 'package:bloc_manual_implementation/blocs/input/input_bloc.dart';
 import 'package:bloc_manual_implementation/blocs/input/input_bloc_event.dart';
 import 'package:bloc_manual_implementation/blocs/input/input_bloc_state.dart';
-import 'package:bloc_manual_implementation/components/provider/bloc_provider.dart';
+import 'package:bloc_manual_implementation/components/provider/provider.dart';
 import 'package:bloc_manual_implementation/widgets/app_filled_button.dart';
 import 'package:bloc_manual_implementation/widgets/app_text_form_field.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ class CalculatorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inputBloc = BlocProvider.of<InputBloc>(context);
+    final inputBloc = Provider.of<InputBloc>(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('BMI Calculator')),

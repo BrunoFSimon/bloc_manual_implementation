@@ -1,6 +1,6 @@
 import 'package:bloc_manual_implementation/blocs/input/input_bloc.dart';
-import 'package:bloc_manual_implementation/components/provider/bloc_provider.dart';
-import 'package:bloc_manual_implementation/components/provider/multi_bloc_provider.dart';
+import 'package:bloc_manual_implementation/components/provider/provider.dart';
+import 'package:bloc_manual_implementation/components/provider/multi_provider.dart';
 import 'package:bloc_manual_implementation/pages/calculator/calculator_widget.dart';
 import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_service.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +32,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _inputBloc.dispose();
+    _bmiCalculatorService.dispose();
 
     super.dispose();
   }
@@ -40,10 +41,10 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: FocusScope.of(context).unfocus,
-      child: MultiBlocProvider(
+      child: MultiProvider(
         providers: [
-          (child) => BlocProvider(bloc: _inputBloc, child: child),
-          (child) => BlocProvider(bloc: _bmiCalculatorService, child: child),
+          (child) => Provider(instance: _inputBloc, child: child),
+          (child) => Provider(instance: _bmiCalculatorService, child: child),
         ],
         child: MaterialApp(
           theme: ThemeData(
