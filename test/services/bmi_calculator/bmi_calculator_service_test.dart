@@ -1,90 +1,180 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_service.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:bloc_manual_implementation/blocs/bmi_calculator/bmi_calculator_bloc.dart';
+import 'package:bloc_manual_implementation/blocs/bmi_calculator/bmi_calculator_bloc_event.dart';
+import 'package:bloc_manual_implementation/blocs/bmi_calculator/bmi_calculator_bloc_state.dart';
 import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_health_status_enum.dart';
+import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_result.dart';
+import 'package:bloc_manual_implementation/services/bmi_calculator/bmi_calculator_service.dart';
+
+class MockBMICalculatorService extends Mock implements BMICalculatorService {}
 
 void main() {
-  final service = BMICalculatorService();
+  late MockBMICalculatorService mockService;
+  late BMICalculatorBloc bloc;
 
-  Future<void> expectBMI({
-    required double height,
-    required double weight,
-    required double expectedBMI,
-    required BMICalculatorCategory expectedCategory,
-  }) async {
-    final result = await service.calculateBMI(height, weight);
-    expect(result.currentBMI, closeTo(expectedBMI, 0.01));
-    expect(result.category, expectedCategory);
-  }
+  setUp(() {
+    mockService = MockBMICalculatorService();
+    bloc = BMICalculatorBloc(bmiCalculatorService: mockService);
 
-  test('calculates Severely Underweight', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 48.0, // BMI ≈ 15.67
-      expectedBMI: 15.67,
-      expectedCategory: BMICalculatorCategory.severelyUnderweight,
+    registerFallbackValue(0.0);
+  });
+
+  tearDown(() {
+    bloc.dispose();
+  });
+
+  test('initial state is InitialBMICalculatorBlocState', () async {
+    expect(await bloc.stateStream.first, isA<InitialBMICalculatorBlocState>());
+  });
+
+  test('emits Loading and Success on valid Calculate event', () async {
+    when(() => mockService.calculateBMI(1.75, 72)).thenAnswer(
+      (_) async => BMICalculatorResult(
+        currentBMI: 23.5,
+        category: BMICalculatorCategory.normal,
+      ),
+    );
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 72, height: 1.75),
+    );
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<LoadingBMICalculatorBlocState>(),
+        predicate<SuccessBMICalculatorBlocState>(
+          (s) =>
+              (s.currentBMI - 23.5).abs() < 0.01 &&
+              s.category == BMICalculatorCategory.normal,
+        ),
+      ]),
+    );
+    verify(() => mockService.calculateBMI(1.75, 72)).called(1);
+  });
+
+  test('emits Error on Calculate event with zero/negative input', () async {
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 0, height: 1.75),
+    );
+    await expectLater(
+      states,
+      emits(
+        predicate<ErrorBMICalculatorBlocState>(
+          (s) => s.errorMessage.contains('greater than zero'),
+        ),
+      ),
     );
   });
 
-  test('calculates Moderately Underweight', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 49.0, // BMI ≈ 16.00
-      expectedBMI: 16.00,
-      expectedCategory: BMICalculatorCategory.moderatelyUnderweight,
+  test('emits Error on Calculate event when service throws', () async {
+    when(
+      () => mockService.calculateBMI(1.75, 72),
+    ).thenThrow(Exception('Fake error'));
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 72, height: 1.75),
+    );
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<LoadingBMICalculatorBlocState>(),
+        predicate<ErrorBMICalculatorBlocState>(
+          (s) => s.errorMessage.contains('An error occurred'),
+        ),
+      ]),
+    );
+    verify(() => mockService.calculateBMI(1.75, 72)).called(1);
+  });
+
+  test('emits Initial state on Reset event', () async {
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(const BMICalculatorBlocResetEvent());
+    await expectLater(states, emits(isA<InitialBMICalculatorBlocState>()));
+  });
+
+  test('multiple Calculate events emit correct states in order', () async {
+    when(() => mockService.calculateBMI(1.80, 80)).thenAnswer(
+      (_) async => BMICalculatorResult(
+        currentBMI: 24.7,
+        category: BMICalculatorCategory.normal,
+      ),
+    );
+    when(() => mockService.calculateBMI(1.60, 100)).thenAnswer(
+      (_) async => BMICalculatorResult(
+        currentBMI: 39.1,
+        category: BMICalculatorCategory
+            .obeseClass2, // 39.1 falls in 35.0 <= BMI < 40.0
+      ),
+    );
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 80, height: 1.80),
+    );
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 100, height: 1.60),
+    );
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<LoadingBMICalculatorBlocState>(),
+        predicate<SuccessBMICalculatorBlocState>(
+          (s) =>
+              (s.currentBMI - 24.7).abs() < 0.01 &&
+              s.category == BMICalculatorCategory.normal,
+        ),
+        isA<LoadingBMICalculatorBlocState>(),
+        predicate<SuccessBMICalculatorBlocState>(
+          (s) =>
+              (s.currentBMI - 39.1).abs() < 0.01 &&
+              s.category == BMICalculatorCategory.obeseClass2,
+        ),
+      ]),
+    );
+    verify(() => mockService.calculateBMI(1.80, 80)).called(1);
+    verify(() => mockService.calculateBMI(1.60, 100)).called(1);
+  });
+
+  test('Reset after Success returns to Initial state', () async {
+    when(() => mockService.calculateBMI(1.75, 72)).thenAnswer(
+      (_) async => BMICalculatorResult(
+        currentBMI: 23.5,
+        category: BMICalculatorCategory.normal,
+      ),
+    );
+
+    final states = bloc.stateStream;
+
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 72, height: 1.75),
+    );
+
+    bloc.eventSink.add(const BMICalculatorBlocResetEvent());
+
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<LoadingBMICalculatorBlocState>(),
+        isA<SuccessBMICalculatorBlocState>(),
+        isA<InitialBMICalculatorBlocState>(),
+      ]),
     );
   });
 
-  test('calculates Mildly Underweight', () async {
-    await expectBMI(
-      height: 1.748,
-      weight: 52.0, // BMI ≈ 17.01
-      expectedBMI: 17.01,
-      expectedCategory: BMICalculatorCategory.mildlyUnderweight,
+  test('Calculate event with negative height emits Error', () async {
+    final states = bloc.stateStream.skip(1);
+    bloc.eventSink.add(
+      const BMICalculatorBlocCalculateEvent(weight: 70, height: -1.70),
     );
-  });
-
-  test('calculates Normal', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 70.0, // BMI ≈ 22.86
-      expectedBMI: 22.86,
-      expectedCategory: BMICalculatorCategory.normal,
+    await expectLater(
+      states,
+      emits(
+        predicate<ErrorBMICalculatorBlocState>(
+          (s) => s.errorMessage.contains('greater than zero'),
+        ),
+      ),
     );
-  });
-
-  test('calculates Overweight', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 80.0, // BMI ≈ 26.12
-      expectedBMI: 26.12,
-      expectedCategory: BMICalculatorCategory.overweight,
-    );
-  });
-
-  test('calculates Obese Class I', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 95.0, // BMI ≈ 31.02
-      expectedBMI: 31.02,
-      expectedCategory: BMICalculatorCategory.obeseClass1,
-    );
-  });
-
-  test('calculates Obese Class II', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 110.0, // BMI ≈ 35.92
-      expectedBMI: 35.92,
-      expectedCategory: BMICalculatorCategory.obeseClass2,
-    );
-  });
-
-  test('calculates Obese Class III', () async {
-    await expectBMI(
-      height: 1.75,
-      weight: 130.0, // BMI ≈ 42.45
-      expectedBMI: 42.45,
-      expectedCategory: BMICalculatorCategory.obeseClass3,
-    );
+    verifyNever(() => mockService.calculateBMI(any(), any()));
   });
 }

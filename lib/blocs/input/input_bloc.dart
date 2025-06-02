@@ -9,7 +9,7 @@ class InputBloc {
   String? _weightError;
   String? _heightError;
 
-  final _eventController = StreamController<InputBlocEvent>();
+  final _eventController = StreamController<InputBlocEvent>.broadcast();
   Sink<InputBlocEvent> get eventSink => _eventController.sink;
 
   final _stateController = StreamController<InputBlocState>();
